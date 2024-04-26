@@ -1,7 +1,9 @@
 import { Message } from "discord.js"
 import add from "./add"
+import view from "./view"
+import remove from "./remove"
 
-export type OptionType = "string" | "int" | "member"
+export type OptionType = "string" | "int" | "user"
 
 export type Options = {
     name: string,
@@ -60,7 +62,7 @@ export function validateOptions(cmd: Command, msg: Message): OptionValidationRes
                 }
             }
 
-            if (v.type == "member") {
+            if (v.type == "user") {
                 val = msg.mentions.users.first()
                 if (!val) return {
                     success: false,
@@ -85,5 +87,7 @@ export function validateOptions(cmd: Command, msg: Message): OptionValidationRes
 
 
 export default [
-    add
+    add,
+    view,
+    remove
 ] as Command[]

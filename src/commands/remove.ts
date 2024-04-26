@@ -5,7 +5,7 @@ import createSupabase from "../supabase";
 const supabase = createSupabase()
 
 export default {
-    name: "add",
+    name: "remove",
     options: [
         {
             name: "member",
@@ -41,12 +41,12 @@ export default {
         }
 
         let oldPoints = dbuser.points || 0
-        let newPoints = oldPoints + ctx.options.amount
+        let newPoints = oldPoints - ctx.options.amount
 
         const {error} = await supabase
             .from("users")
             .update({
-                points: oldPoints + ctx.options.amount
+                points: newPoints
             })
             .eq("id", user.id)
             .eq("server", ctx.message.guildId)
