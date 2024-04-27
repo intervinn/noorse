@@ -1,7 +1,7 @@
 require("dotenv").config()
 
 import { Client, IntentsBitField } from "discord.js"
-import commands, { OptionMap, validateOptions } from "./commands"
+import commands, { OptionMap, validateOptions, validatePermissions } from "./commands"
 
 const __token = process.env.TOKEN!
 
@@ -25,11 +25,22 @@ client.on("messageCreate", (msg) => {
 
         if (cmd) {
 
-            let {result, success} = validateOptions(cmd, msg)
-            if (!success) msg.reply(`Invalid command:\n\`\`\`${result}\`\`\``)
-            else cmd.run({
+            const opts = validateOptions(cmd, msg)
+            if (!opts.success) {
+                msg.reply(`Invalid command:\n\`\`\`${opts.result}\`\`\``)
+                return
+            }
+            
+            
+            const perms = validatePermissions(cmd, msg)
+            if (!perms.success) {
+                msg.reply(`Invalid command:\n\`\`\`${perms.error}\`\`\``)
+                return
+            }
+
+            cmd.run({
                 message: msg,
-                options: result as OptionMap
+                options: opts.result as OptionMap
             })
         }
     }

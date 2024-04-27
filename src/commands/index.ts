@@ -1,7 +1,8 @@
-import { Message } from "discord.js"
+import { Message, PermissionFlagsBits } from "discord.js"
 import add from "./add"
 import view from "./view"
 import remove from "./remove"
+import help from "./help"
 
 export type OptionType = "string" | "int" | "user"
 
@@ -21,6 +22,10 @@ export type Context = {
 export type Command = {
     name: string,
     options: Options[],
+    permissions?: {
+        roleName?: string,
+        permission?: bigint
+    }
     run(ctx: Context): any
 }
 
@@ -29,18 +34,49 @@ export type OptionValidationResult = {
     result: string | OptionMap
 }
 
-export function validateOptions(cmd: Command, msg: Message): OptionValidationResult {
-    const args = msg.content.split(" ").slice(1)
+export type PermissionValidationResult = {
+    success: boolean,
+    error?: string
+}
 
-    let formatmsg = `lacking options, see the format:\n .${cmd.name}`
+
+export function makeFormat(cmd: Command, prefix?: string): string {
+    let formatmsg = `${prefix} see the format:\n .${cmd.name}`
     cmd.options.forEach(v => {
         formatmsg += ` [${v.name}]`
     })
+    return formatmsg
+}
+
+export function validatePermissions(cmd: Command, msg: Message): PermissionValidationResult {
+
+    let valid = true
+
+    if ((cmd.permissions?.roleName 
+        && !msg.member?.roles.cache.find(v => v.name === cmd.permissions?.roleName)
+        || (cmd.permissions?.permission
+        && !msg.member?.permissions.has(cmd.permissions.permission))
+    )) valid = false
+
+    if (valid) {
+        return {
+            success: true
+        }
+    } else {
+        return {
+            success: false,
+            error: "lacking permissions"
+        }
+    }
+}
+
+export function validateOptions(cmd: Command, msg: Message): OptionValidationResult {
+    const args = msg.content.split(" ").slice(1)
 
     if (args.length < cmd.options.length) {
         return {
             success: false,
-            result: formatmsg
+            result: makeFormat(cmd, "lacking options.")
         }
     }
 
@@ -50,32 +86,36 @@ export function validateOptions(cmd: Command, msg: Message): OptionValidationRes
     for (let i = 0; i < cmd.options.length; i++) {
         const v = cmd.options[i]
 
-        if (v.greedy) {
-            res[v.name] = args.slice(i).join(" ")
-        } else {
-            let val: any = args[i]
-            if (v.type === "int") {
-                val = Number(val)
-                if (isNaN(val)) return {
-                    success: false,
-                    result: formatmsg
-                }
+        if (v.type === "string" && v.greedy) {
+            res[v.name] = args.slice(i)
+            break
+        } 
+
+        let val: any = args[i]
+        if (v.type === "int") {
+            val = Number(val)
+
+            if (isNaN(val)) return {
+                success: false,
+                result: makeFormat(cmd, "lacking options.")
+            }
+        }
+
+        if (v.type == "user") {
+            val = msg.mentions.users.first()
+            if (!val) return {
+                success: false,
+                result: makeFormat(cmd, "lacking options.")
             }
 
-            if (v.type == "user") {
-                val = msg.mentions.users.first()
-                if (!val) return {
-                    success: false,
-                    result: formatmsg
-                }
-                
+            if (v.greedy) {
+                val = msg.mentions.users.clone()
+            } else {
                 const fk = msg.mentions.users.firstKey()
                 msg.mentions.users.sweep((v, k) => v.id != val.id && k != fk)
             }
-            
-            
-            res[v.name] = val
         }
+        res[v.name] = val
     }
 
     return {
@@ -86,8 +126,10 @@ export function validateOptions(cmd: Command, msg: Message): OptionValidationRes
 }
 
 
-export default [
+export const commands = [
     add,
     view,
-    remove
+    remove,
+    help
 ] as Command[]
+export default commands

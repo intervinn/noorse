@@ -1,19 +1,21 @@
-import { User } from "discord.js";
+import { Collection, PermissionFlagsBits, User } from "discord.js";
 import { Command, OptionType } from ".";
 import createSupabase from "../supabase";
+import { addPoints } from "../supabase/points";
 
 const supabase = createSupabase()
 
 export default {
-    name: "remove",
+    name: "add",
     options: [
-        {
-            name: "member",
-            type: "user"
-        },
         {
             name: "amount",
             type: "int"
+        },
+        {
+            name: "member",
+            type: "user",
+            greedy: true
         },
         {
             name: "message",
@@ -21,54 +23,41 @@ export default {
             greedy: true
         }
     ],
+    permissions: {
+        roleName: "Bot Manager"
+    },
     run: async (ctx) => {
-        const user = ctx.options.member as User
-
-        
-        const {data} = await supabase
-            .from("users")
-            .select()
-            .eq("id", user.id)
-            .eq("server", ctx.message.guildId)
-        const dbuser = data?.at(0)
-
-        if (!dbuser) {
-            await supabase.from("users").upsert({
-                id: user.id,
-                points: ctx.options.amount,
-                server: ctx.message.guildId
+        const users = ctx.options.member as Collection<string, User>
+        users.forEach(async (v) => {
+            const result = await addPoints({
+                user: v,
+                amount: ctx.options.amount * -1,
+                supabase: supabase,
+                guildId: ctx.message.guildId!
             })
-        }
 
-        let oldPoints = dbuser.points || 0
-        let newPoints = oldPoints - ctx.options.amount
+            if (!result?.success) {
+                ctx.message.reply(`${result?.error}`)
+                return
+            }
 
-        const {error} = await supabase
-            .from("users")
-            .update({
-                points: newPoints
-            })
-            .eq("id", user.id)
-            .eq("server", ctx.message.guildId)
-        if (error) {
-            ctx.message.reply(`there was en error on trying to update data: ${error}`)
-        }
-
-        ctx.message.reply({
-            embeds: [
-                {
-                    title: "successfully gave points",
-                    description: `user: ${user.displayName}`,
-                    fields: [
-                        {name: "message", value: ctx.options.message},
-                        {name: "old points", value: oldPoints},
-                        {name: "new points", value: newPoints}
-                    ],
-                    thumbnail: {
-                        url: user.displayAvatarURL({size: 128})
+            ctx.message.reply({
+                embeds: [
+                    {
+                        title: "successfully gave points",
+                        description: `user: ${v.displayName}`,
+                        fields: [
+                            {name: "message", value: ctx.options.message},
+                            {name: "old points", value: result.oldPoints},
+                            {name: "new points", value: result.oldPoints + ctx.options.amount}
+                        ],
+                        thumbnail: {
+                            url: v.displayAvatarURL({size: 128})
+                        }
                     }
-                }
-            ]
+                ]
+            })
         })
+
     }
 } as Command
