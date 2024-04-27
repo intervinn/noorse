@@ -28,8 +28,6 @@ export default {
     },
     run: async (ctx) => {
 
-        console.log(ctx.options)
-
         const users = ctx.options.member as Collection<string, User>
         users.forEach(async (v) => {
             const result = await addPoints({

@@ -41,10 +41,13 @@ export type PermissionValidationResult = {
 
 
 export function makeFormat(cmd: Command, prefix?: string): string {
-    let formatmsg = `${prefix} see the format:\n .${cmd.name}`
-    cmd.options.forEach(v => {
-        formatmsg += ` [${v.name}]`
-    })
+    let formatmsg = `.${cmd.name}`
+    
+    if (cmd.options)
+        for (let v of cmd.options) {
+            formatmsg += ` [${v.name}]`
+        }
+    
     return formatmsg
 }
 
@@ -71,9 +74,14 @@ export function validatePermissions(cmd: Command, msg: Message): PermissionValid
 }
 
 export function validateOptions(cmd: Command, msg: Message): OptionValidationResult {
+    if (!cmd.options) 
+        return {
+            success: true,
+            result: {}
+        }
     const args = msg.content.split(" ").slice(1)
 
-    if (args.length < cmd.options.length) {
+    if (cmd.options && args.length < cmd.options.length) {
         return {
             success: false,
             result: makeFormat(cmd, "lacking options.")
@@ -82,12 +90,11 @@ export function validateOptions(cmd: Command, msg: Message): OptionValidationRes
 
     let res: OptionMap = {}
 
-
     for (let i = 0; i < cmd.options.length; i++) {
         const v = cmd.options[i]
 
         if (v.type === "string" && v.greedy) {
-            res[v.name] = args.slice(i)
+            res[v.name] = args.slice(i).join(" ")
             break
         } 
 

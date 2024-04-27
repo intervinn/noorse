@@ -23,20 +23,22 @@ export async function addPoints({user, guildId, amount, supabase}: AddPointOptio
     .eq("server", guildId)
     const dbuser = data?.at(0)
 
+    let oldpoints = 0
+
     if (!dbuser) {
         await supabase.from("users").upsert({
             id: user.id,
             points: amount,
             server: guildId
         })
+    } else {
+        oldpoints = dbuser.points
     }
-
-    const oldPoints = dbuser.points || 0
-
+    
     const {error} = await supabase
         .from("users")
         .update({
-            points: oldPoints + amount
+            points: oldpoints + amount
         })
         .eq("id", user.id)
         .eq("server", guildId)
@@ -49,7 +51,7 @@ export async function addPoints({user, guildId, amount, supabase}: AddPointOptio
     } else {
         return {
             success: true,
-            oldPoints: oldPoints
+            oldPoints: oldpoints
         }
     }
 }

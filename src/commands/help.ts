@@ -2,7 +2,7 @@ import { APIEmbedField } from "discord.js";
 import commands, { Command, makeFormat } from ".";
 
 export default {
-    name: "view",
+    name: "help",
     run: async (ctx) => {
 
         const fields: APIEmbedField[] = []
@@ -17,7 +17,7 @@ export default {
             embeds: [
                 {
                     title: "Noorse - a bot for your point needs",
-                    description: "Prefix- `.`",
+                    description: "Prefix - `.`",
                     fields: fields
                 }
             ]
