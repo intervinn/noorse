@@ -15,7 +15,7 @@ var AddPointsCommand = &noorse.Command{
 		Name:        "add",
 		Description: "add points",
 		Options: discord.CommandOptions{
-			&discord.NumberOption{
+			&discord.IntegerOption{
 				Required:    true,
 				OptionName:  "amount",
 				Description: "the amount of points to add",
@@ -38,15 +38,24 @@ var AddPointsCommand = &noorse.Command{
 		},
 	},
 	Callback: func(ctx context.Context, data cmdroute.CommandData) *api.InteractionResponseData {
-		state := noorse.GetInstance().State
-		guild, err := state.Guild(data.Event.GuildID)
+		guild, err := ParseGuild(data.Event.GuildID.String())
 		if err != nil {
-			return ErrorResponse(err)
+			return ErrorResponse("couldn't parse guild", err)
 		}
 
-		// retrieve user ids
 		user := data.Data.Options.Find("user").String()
 		userids := data.Data.Options.Find("userids").String()
+
+		if userids == "" && user == "" {
+			return EmbedResponse(discord.Embed{
+				Title: "specify either a user or userids duh",
+			})
+		}
+
+		amount, err := data.Data.Options.Find("amount").IntValue()
+		if err != nil {
+			return ErrorResponse("couldn't parse amount", err)
+		}
 
 		ids := strings.Split(userids, " ")
 		if user != "" {
@@ -56,19 +65,23 @@ var AddPointsCommand = &noorse.Command{
 		embeds := []discord.Embed{}
 		// convert to users
 		for _, i := range ids {
+			if i == "" {
+				continue
+			}
+
 			u, err := ParseUser(i)
 			if err != nil {
-				embeds = append(embeds, ErrorEmbed(err))
+				embeds = append(embeds, ErrorEmbed("failed to parse user", err))
 				continue
 			}
 
-			err = AddPoints(u, guild)
+			prev, new, err := AddPoints(u, guild, amount)
 			if err != nil {
-				embeds = append(embeds, ErrorEmbed(err))
+				embeds = append(embeds, ErrorEmbed("failed to add points", err))
 				continue
 			}
 
-			embeds = append(embeds, SuccessEmbed(u, 0, 0))
+			embeds = append(embeds, SuccessEmbed(u, prev, new))
 		}
 
 		return &api.InteractionResponseData{

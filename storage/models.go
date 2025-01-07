@@ -2,14 +2,10 @@ package storage
 
 import "gorm.io/gorm"
 
-type User struct {
-	gorm.Model
-	ID       int64          `gorm:"primaryKey"`
-	Accounts []GuildAccount `gorm:"many2many:user_accounts"`
-}
-
+// i know about relations ill consider it later
 type GuildAccount struct {
 	gorm.Model
-	ID     int64 `gorm:"primaryKey"`
-	Amount int64
+	GuildID int64 `gorm:"guild_id"`
+	UserID  int64 `gorm:"user_id"`
+	Amount  int64 `gorm:"amount"`
 }

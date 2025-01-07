@@ -21,7 +21,6 @@ func New() *Storage {
 		log.Fatalln("failed to init storage:", err)
 	}
 
-	db.AutoMigrate(&User{})
 	db.AutoMigrate(&GuildAccount{})
 
 	return &Storage{
@@ -29,8 +28,8 @@ func New() *Storage {
 	}
 }
 
-func (s *Storage) UserExists(id int64) bool {
-	return s.DB.First(&User{
-		ID: id,
-	}).RowsAffected > 0
+func (s *Storage) UserExists(guild int64, user int64) bool {
+	rows := s.DB.Where("guild_id = ? AND user_id = ?", guild, user).RowsAffected
+	fmt.Println(rows)
+	return rows > 0
 }
