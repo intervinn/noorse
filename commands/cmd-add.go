@@ -2,6 +2,9 @@ package commands
 
 import (
 	"context"
+	"errors"
+	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/diamondburned/arikawa/v3/api"
@@ -38,11 +41,36 @@ var AddPointsCommand = &noorse.Command{
 		},
 	},
 	Callback: func(ctx context.Context, data cmdroute.CommandData) *api.InteractionResponseData {
+		sender := data.Event.Sender()
 		guild, err := ParseGuild(data.Event.GuildID.String())
 		if err != nil {
 			return ErrorResponse("couldn't parse guild", err)
 		}
 
+		state := noorse.GetInstance().State
+		member, err := state.Member(guild.ID, sender.ID)
+		if err != nil {
+			return ErrorResponse("failed to parse member", err)
+		}
+
+		authorized := false
+		for _, rid := range member.RoleIDs {
+			role, err := state.Role(guild.ID, rid)
+			if err != nil {
+				continue
+			}
+
+			if role.Name == "Bot Manager" {
+				authorized = true
+				break
+			}
+		}
+
+		if !authorized {
+			return ErrorResponse("unauthorized", errors.New("user has no `Bot Manager` named role"))
+		}
+
+		reason := data.Data.Options.Find("reason").String()
 		user := data.Data.Options.Find("user").String()
 		userids := data.Data.Options.Find("userids").String()
 
@@ -81,7 +109,26 @@ var AddPointsCommand = &noorse.Command{
 				continue
 			}
 
-			embeds = append(embeds, SuccessEmbed(u, prev, new))
+			embeds = append(embeds, discord.Embed{
+				Title:       "Successfully added points",
+				Description: fmt.Sprintf("by %s to %s - \"%s\"", data.Event.Sender().Username, u.Username, reason),
+				Fields: []discord.EmbedField{
+					{
+						Name:   "Old value",
+						Value:  strconv.Itoa(int(prev)),
+						Inline: true,
+					},
+					{
+						Name:   "New value",
+						Value:  strconv.Itoa(int(new)),
+						Inline: true,
+					},
+				},
+				Author: &discord.EmbedAuthor{
+					Name: u.Username,
+				},
+				Color: 0x57ab3f,
+			})
 		}
 
 		return &api.InteractionResponseData{
