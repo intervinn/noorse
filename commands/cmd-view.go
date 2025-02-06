@@ -45,10 +45,9 @@ var ViewPointsCommand = &noorse.Command{
 		}
 
 		a := new(storage.GuildAccount)
-		err = storage.GetInstance().DB.Model(&storage.GuildAccount{
-			UserID:  int64(user.ID),
-			GuildID: int64(guild.ID),
-		}).First(&a).Error
+
+		err = storage.GetInstance().DB.Where("guild_id = ? AND user_id = ?", guild.ID, user.ID).First(a).Error
+
 		if err != nil {
 			return ErrorResponse("db query issue", err)
 		}
