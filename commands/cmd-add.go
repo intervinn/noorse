@@ -10,6 +10,7 @@ import (
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/api/cmdroute"
 	"github.com/diamondburned/arikawa/v3/discord"
+	"github.com/diamondburned/arikawa/v3/utils/json/option"
 	"github.com/intervinn/noorse"
 )
 
@@ -131,8 +132,13 @@ var AddPointsCommand = &noorse.Command{
 			})
 		}
 
+		for _, e := range embeds {
+			state.SendMessage(data.Event.ChannelID, "", e)
+		}
+
 		return &api.InteractionResponseData{
-			Embeds: &embeds,
+			Content: option.NewNullableString("success placeholder"),
+			Flags:   discord.EphemeralMessage,
 		}
 	},
 }

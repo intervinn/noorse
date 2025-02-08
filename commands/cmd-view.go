@@ -49,7 +49,7 @@ var ViewPointsCommand = &noorse.Command{
 		err = storage.GetInstance().DB.Where("guild_id = ? AND user_id = ?", guild.ID, user.ID).First(a).Error
 
 		if err != nil {
-			return ErrorResponse("db query issue", err)
+			return ErrorResponse("looks like you never had points before\nthe error", err)
 		}
 
 		return EmbedResponse(discord.Embed{
