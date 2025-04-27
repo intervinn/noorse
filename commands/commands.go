@@ -5,15 +5,47 @@ import (
 
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/discord"
+	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/intervinn/noorse"
 	"github.com/intervinn/noorse/storage"
 )
 
 var Commands []*noorse.Command = []*noorse.Command{}
 
+func Init() {
+	noorse.Instance().State.AddHandler(func(e *gateway.InteractionCreateEvent) {
+		switch data := e.Data.(type) {
+		case discord.ComponentInteraction:
+			ListPointsClick(e, data)
+			return
+		}
+	})
+}
+
+func IsDev(u *discord.User) bool {
+	return u.ID == 347365756301737994
+}
+
+func IsManager(m *discord.Member, guild *discord.Guild) bool {
+	state := noorse.Instance().State
+
+	for _, rid := range m.RoleIDs {
+		role, err := state.Role(guild.ID, rid)
+		if err != nil {
+			continue
+		}
+
+		if role.Name == "Bot Manager" {
+			return true
+		}
+	}
+	return false
+}
+
 func AddPoints(u *discord.User, g *discord.Guild, amount int64) (int64, int64, error) {
-	if !storage.GetInstance().UserExists(int64(g.ID), int64(u.ID)) {
-		storage.GetInstance().DB.Create(&storage.GuildAccount{
+	if !storage.Instance().UserExists(int64(g.ID), int64(u.ID)) {
+		fmt.Println("USER DOESNT EXIST, CREATE")
+		storage.Instance().DB.Create(&storage.GuildAccount{
 			UserID:  int64(u.ID),
 			GuildID: int64(g.ID),
 			Amount:  0,
@@ -21,7 +53,7 @@ func AddPoints(u *discord.User, g *discord.Guild, amount int64) (int64, int64, e
 	}
 
 	record := new(storage.GuildAccount)
-	err := storage.GetInstance().DB.Where("guild_id = ? AND user_id = ?", g.ID, u.ID).First(record).Error
+	err := storage.Instance().DB.Where("guild_id = ? AND user_id = ?", g.ID, u.ID).First(record).Error
 	if err != nil {
 		return 0, 0, err
 	}
@@ -30,7 +62,7 @@ func AddPoints(u *discord.User, g *discord.Guild, amount int64) (int64, int64, e
 	new := record.Amount + amount
 
 	record.Amount = new
-	if err := storage.GetInstance().DB.Save(record).Error; err != nil {
+	if err := storage.Instance().DB.Save(record).Error; err != nil {
 		return 0, 0, err
 	}
 
@@ -61,7 +93,7 @@ func ParseUser(id string) (*discord.User, error) {
 	if err != nil {
 		return nil, err
 	}
-	u, err := noorse.GetInstance().State.User(discord.UserID(s))
+	u, err := noorse.Instance().State.User(discord.UserID(s))
 	if err != nil {
 		return nil, err
 	}
@@ -75,7 +107,7 @@ func ParseGuild(id string) (*discord.Guild, error) {
 		return nil, err
 	}
 
-	g, err := noorse.GetInstance().State.Guild(discord.GuildID(s))
+	g, err := noorse.Instance().State.Guild(discord.GuildID(s))
 	if err != nil {
 		return nil, err
 	}

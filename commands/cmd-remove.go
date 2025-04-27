@@ -48,24 +48,13 @@ var RemovePointsCommand = &noorse.Command{
 			return ErrorResponse("couldn't parse guild", err)
 		}
 
-		state := noorse.GetInstance().State
+		state := noorse.Instance().State
 		member, err := state.Member(guild.ID, sender.ID)
 		if err != nil {
 			return ErrorResponse("failed to parse member", err)
 		}
 
-		authorized := false
-		for _, rid := range member.RoleIDs {
-			role, err := state.Role(guild.ID, rid)
-			if err != nil {
-				continue
-			}
-
-			if role.Name == "Bot Manager" {
-				authorized = true
-				break
-			}
-		}
+		authorized := IsManager(member, guild)
 
 		if !authorized {
 			return ErrorResponse("unauthorized", errors.New("user has no `Bot Manager` named role"))

@@ -10,7 +10,6 @@ import (
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/api/cmdroute"
 	"github.com/diamondburned/arikawa/v3/discord"
-	"github.com/diamondburned/arikawa/v3/utils/json/option"
 	"github.com/intervinn/noorse"
 )
 
@@ -48,24 +47,13 @@ var AddPointsCommand = &noorse.Command{
 			return ErrorResponse("couldn't parse guild", err)
 		}
 
-		state := noorse.GetInstance().State
+		state := noorse.Instance().State
 		member, err := state.Member(guild.ID, sender.ID)
 		if err != nil {
 			return ErrorResponse("failed to parse member", err)
 		}
 
-		authorized := false
-		for _, rid := range member.RoleIDs {
-			role, err := state.Role(guild.ID, rid)
-			if err != nil {
-				continue
-			}
-
-			if role.Name == "Bot Manager" {
-				authorized = true
-				break
-			}
-		}
+		authorized := IsManager(member, guild)
 
 		if !authorized {
 			return ErrorResponse("unauthorized", errors.New("user has no `Bot Manager` named role"))
@@ -132,13 +120,14 @@ var AddPointsCommand = &noorse.Command{
 			})
 		}
 
-		for _, e := range embeds {
-			state.SendMessage(data.Event.ChannelID, "", e)
+		if len(embeds) > 1 {
+			for _, e := range embeds[1:] {
+				state.SendMessage(data.Event.ChannelID, "", e)
+			}
 		}
 
 		return &api.InteractionResponseData{
-			Content: option.NewNullableString("success placeholder"),
-			Flags:   discord.EphemeralMessage,
+			Embeds: &([]discord.Embed{embeds[0]}),
 		}
 	},
 }

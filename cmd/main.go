@@ -7,11 +7,14 @@ import (
 	"github.com/joho/godotenv"
 )
 
-func main() {
+func init() {
 	godotenv.Load()
+}
 
-	storage.GetInstance()
-	bot := noorse.GetInstance()
+func main() {
+	storage.Instance()
+	bot := noorse.Instance()
 	bot.Init(commands.Commands)
+	commands.Init()
 	bot.Serve()
 }

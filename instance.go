@@ -2,7 +2,7 @@ package noorse
 
 var instance *Bot = nil
 
-func GetInstance() *Bot {
+func Instance() *Bot {
 	if instance == nil {
 		instance = New()
 	}

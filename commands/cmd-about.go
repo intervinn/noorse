@@ -19,22 +19,22 @@ var AboutCommand = &noorse.Command{
 			Title: "noorse",
 			Description: `i exist to store your server points
 			
-			also i am [open sourced](https://github.com/intervinn/noorse) incase you want to update me
+			noorse is [open sourced](https://github.com/intervinn/noorse), feel free to contribute
+			
+			the database is provided from a minecraft server hosting
 
-			i pay for a minecraft server and turns it provides 2 mysql instances
-			so i have an almost infinite database as long as the server stays alive
+			however i cba to buy an actual hosting to deploy the bot, so it runs on some free thing
 
-			however i cant be arsed to buy some vps to host the actual bot
-			theoretically i couldve written the bot in java and plug it in as a server plugin
-			but yeah this bot is written in go
+			to add and remove points a user must have a role named exactly 'Bot Manager', that's all you need
 			`,
 			Footer: &discord.EmbedFooter{
-				Text: "that magic man made me",
+				Text: "there lived a certain man in russia long ago, he was cool and shit and he made noorse",
 			},
 		})
 	},
 }
 
 func init() {
+
 	Commands = append(Commands, AboutCommand)
 }

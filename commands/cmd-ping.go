@@ -16,7 +16,7 @@ var PingCommand = &noorse.Command{
 		Description: "ping",
 	},
 	Callback: func(ctx context.Context, data cmdroute.CommandData) *api.InteractionResponseData {
-		latency := noorse.GetInstance().State.Gateway().Latency()
+		latency := noorse.Instance().State.Gateway().Latency()
 
 		return &api.InteractionResponseData{
 			Embeds: &[]discord.Embed{

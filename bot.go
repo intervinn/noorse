@@ -8,6 +8,7 @@ import (
 
 	"github.com/diamondburned/arikawa/v3/api"
 	"github.com/diamondburned/arikawa/v3/api/cmdroute"
+	"github.com/diamondburned/arikawa/v3/discord"
 	"github.com/diamondburned/arikawa/v3/gateway"
 	"github.com/diamondburned/arikawa/v3/state"
 )
@@ -23,6 +24,7 @@ func New() *Bot {
 
 	r := cmdroute.NewRouter()
 	s := state.New("Bot " + token)
+
 	s.AddInteractionHandler(r)
 	s.AddIntents(gateway.IntentGuildMessages)
 	s.AddIntents(gateway.IntentMessageContent)
@@ -55,7 +57,27 @@ func (b *Bot) overwriteCommands(commands []*Command) {
 	}
 }
 
+func (b *Bot) ready(e *gateway.ReadyEvent) {
+	if os.Getenv("DEV") == "1" {
+		b.State.Gateway().Send(context.Background(), &gateway.UpdatePresenceCommand{
+			Status: discord.IdleStatus,
+			Activities: []discord.Activity{
+				{
+					Name: "maintenance, use at your risk",
+					Type: discord.WatchingActivity,
+				},
+			},
+		})
+	} else {
+		b.State.Gateway().Send(context.Background(), &gateway.UpdatePresenceCommand{
+			Status: discord.OnlineStatus,
+		})
+	}
+}
+
 func (b *Bot) Serve() {
+	b.State.AddHandler(b.ready)
+
 	if err := b.State.Connect(context.TODO()); err != nil {
 		log.Println("cannot connect:", err)
 	}

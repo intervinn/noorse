@@ -46,7 +46,7 @@ var ViewPointsCommand = &noorse.Command{
 
 		a := new(storage.GuildAccount)
 
-		err = storage.GetInstance().DB.Where("guild_id = ? AND user_id = ?", guild.ID, user.ID).First(a).Error
+		err = storage.Instance().DB.Where("guild_id = ? AND user_id = ?", guild.ID, user.ID).First(a).Error
 
 		if err != nil {
 			return ErrorResponse("looks like you never had points before\nthe error", err)
